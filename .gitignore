@@ -1,1 +1,6 @@
 .DS_Store
+
+# Outputs
+_build/
+_install/
+_output/
