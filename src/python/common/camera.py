@@ -70,7 +70,7 @@ class Camera(object):
 if __name__ == '__main__':
   # callback = lambda frame, _: cv2.imshow('frame', frame)
   def callback(frame, _):
-    return cv2.imshow('frame', frame)
+    cv2.imshow('frame', frame)
 
   with Camera(0) as cam:
     print('Camera: %dx%d, %d' % (
