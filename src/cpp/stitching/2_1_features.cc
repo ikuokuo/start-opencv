@@ -10,6 +10,7 @@
 #endif
 
 #include "common/logger.h"
+#include "common/optparse.h"
 
 using namespace std;
 using namespace cv;
@@ -37,8 +38,15 @@ void findFeatures(const Ptr<Feature2D> &finder,
 }
 
 int main(int argc, char const *argv[]) {
-  (void)argc;
-  (void)argv;
+  auto parser = optparse::OptionParser()
+      .usage("usage: %prog [options]")
+      .description("Features Finding");
+  parser.add_option("-s", "--show").dest("show")
+      .action("store_true")
+      .help("show features");
+  auto options = parser.parse_args(argc, argv);
+  bool is_show = options.get("show");
+
   auto logger = TimingLogger::Create("Images");
   vector<Mat> images{
     imread(samples::findFile(MY_DATA "/stitching/boat1.jpg")),
@@ -64,15 +72,17 @@ int main(int argc, char const *argv[]) {
     findFeatures(finder.first, images, &features, finder.second, logger.get());
 
     // show
-    for (int i = 0; i < images_n; i++) {
-      auto img = images[i];
-      drawKeypoints(img, features[i].keypoints, img, Scalar(0, 255, 0),
-          DrawMatchesFlags::DRAW_OVER_OUTIMG);
-      imshow((stringstream() << "image #" << (i+1) << ", "
-          << img.cols << "x" << img.rows).str(), img);
+    if (is_show) {
+      for (int i = 0; i < images_n; i++) {
+        auto img = images[i];
+        drawKeypoints(img, features[i].keypoints, img, Scalar(0, 255, 0),
+            DrawMatchesFlags::DRAW_OVER_OUTIMG);
+        imshow((stringstream() << "image #" << (i+1) << ", "
+            << img.cols << "x" << img.rows).str(), img);
+      }
+      waitKey(0);
+      destroyAllWindows();
     }
-    waitKey(0);
-    destroyAllWindows();
   }
 
   return 0;
