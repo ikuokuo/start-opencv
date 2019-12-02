@@ -3,7 +3,8 @@ project(start-opencv VERSION 1.0.0 LANGUAGES C CXX)
 
 include(cmake/global.cmake)
 
-set(MY_ROOT "${PROJECT_SOURCE_DIR}")
+set(MY_ROOT ${PROJECT_SOURCE_DIR})
+set(MY_DATA ${MY_ROOT}/data)
 
 # cmake options
 

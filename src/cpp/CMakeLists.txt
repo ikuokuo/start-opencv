@@ -20,6 +20,9 @@ macro(add_cv_executable NAME)
     add_executable(${NAME} ${THIS_SRCS})
   endif()
   target_link_libraries(${NAME} ${OpenCV_LIBS} ${THIS_LIBS})
+  target_compile_definitions(${NAME} PUBLIC
+    MY_DATA="${MY_DATA}"
+  )
 endmacro()
 
 add_subdirectory(${MY_CURR}/camera)

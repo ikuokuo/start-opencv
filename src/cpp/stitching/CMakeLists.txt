@@ -18,9 +18,17 @@ add_cv_executable(tutorial_stitching_detailed
   SRCS tutorial/stitching_detailed.cpp
 )
 
+set(cv_names
+  1_stitcher
+)
+
+foreach(cv_name IN LISTS cv_names)
+  add_cv_executable(${cv_name})
+endforeach()
+
 ## install
 
-install(TARGETS tutorial_stitching tutorial_stitching_detailed
+install(TARGETS tutorial_stitching tutorial_stitching_detailed ${cv_names}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}/${MY_NAME}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/${MY_NAME}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/${MY_NAME}
