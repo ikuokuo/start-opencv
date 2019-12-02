@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 
+// #define LOG_PREFIX
 #define LOG_TIMING
 
 #define LOG(severity) Logger((char *)__FILE__, __LINE__, "native", Logger::severity).stream()  // NOLINT
@@ -34,8 +35,12 @@ class Logger {
   Logger(const char *file, int line, const char *tag, int severity,
       std::ostream &os = std::cout)
     : file_(file), line_(line), tag_(tag), severity_(severity), ostream_(os) {
+#ifdef LOG_PREFIX
     StripBasename(std::string(file), &filename_only_);
     stream_ << SeverityLabel() << "/" << filename_only_ << ":" << line_ << " ";
+#else
+    (void)line_;
+#endif
   }
 
   ~Logger() noexcept(false) {
