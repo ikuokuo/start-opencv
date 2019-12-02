@@ -20,6 +20,7 @@ add_cv_executable(tutorial_stitching_detailed
 
 set(cv_names
   1_stitcher
+  2_1_features
 )
 
 foreach(cv_name IN LISTS cv_names)
