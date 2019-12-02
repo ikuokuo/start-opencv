@@ -38,6 +38,7 @@ void findFeatures(const Ptr<Feature2D> &finder,
 }
 
 int main(int argc, char const *argv[]) {
+  // options
   auto parser = optparse::OptionParser()
       .usage("usage: %prog [options]")
       .description("Features Finding");
@@ -47,6 +48,7 @@ int main(int argc, char const *argv[]) {
   auto options = parser.parse_args(argc, argv);
   bool is_show = options.get("show");
 
+  // images
   auto logger = TimingLogger::Create("Images");
   vector<Mat> images{
     imread(samples::findFile(MY_DATA "/stitching/boat1.jpg")),
@@ -54,6 +56,8 @@ int main(int argc, char const *argv[]) {
   };
   logger->AddSplit("read");
   logger->DumpToLog();
+
+  // features finding
 
   int images_n = images.size();
   vector<detail::ImageFeatures> features(images_n);
@@ -71,7 +75,7 @@ int main(int argc, char const *argv[]) {
     cout << endl;
     findFeatures(finder.first, images, &features, finder.second, logger.get());
 
-    // show
+    // features show
     if (is_show) {
       Mat img;
       for (int i = 0; i < images_n; i++) {
