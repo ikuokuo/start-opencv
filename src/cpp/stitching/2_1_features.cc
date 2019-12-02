@@ -73,10 +73,10 @@ int main(int argc, char const *argv[]) {
 
     // show
     if (is_show) {
+      Mat img;
       for (int i = 0; i < images_n; i++) {
-        auto img = images[i];
-        drawKeypoints(img, features[i].keypoints, img, Scalar(0, 255, 0),
-            DrawMatchesFlags::DRAW_OVER_OUTIMG);
+        drawKeypoints(images[i], features[i].keypoints, img, Scalar(0, 255, 0),
+            DrawMatchesFlags::DEFAULT);
         imshow((stringstream() << "image #" << (i+1) << ", "
             << img.cols << "x" << img.rows).str(), img);
       }
