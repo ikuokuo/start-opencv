@@ -15,28 +15,6 @@
 using namespace std;
 using namespace cv;
 
-void findFeatures(const Ptr<Feature2D> &finder,
-    const vector<Mat> &images,
-    vector<detail::ImageFeatures> *features,
-    const string &features_desc,
-    TimingLogger *logger = nullptr) {
-  int images_n = images.size();
-
-  if (logger) logger->Reset(features_desc);
-  LOG(INFO) << features_desc;
-  for (int i = 0; i < images_n; i++) {
-    computeImageFeatures(finder, images[i], (*features)[i]);
-    (*features)[i].img_idx = i;
-    auto image_name = (stringstream() << "image #" << (i+1) << ", "
-        << images[i].cols << "x" << images[i].rows).str();
-    LOG(INFO) << "  " << image_name << ": " << (*features)[i].keypoints.size();
-    if (logger) logger->AddSplit(image_name);
-  }
-  // computeImageFeatures(finder, images, *features);
-  // logger->AddSplit("find");
-  if (logger) logger->DumpToLog();
-}
-
 int main(int argc, char const *argv[]) {
   // options
   auto parser = optparse::OptionParser()
@@ -52,10 +30,9 @@ int main(int argc, char const *argv[]) {
   bool is_show = options.get("show");
   float work_megapix = options.get("work_megapix");
 
-  cout << "Options:" << endl
-       << "  show: " << (is_show ? "true" : "false") << endl
-       << "  work_megapix: " << work_megapix << endl
-       << endl;
+  LOG(INFO) << "Options:" << endl
+      << "  show: " << (is_show ? "true" : "false") << endl
+      << "  work_megapix: " << work_megapix << endl;
 
   // images
   auto logger = TimingLogger::Create("Images");
@@ -95,8 +72,30 @@ int main(int argc, char const *argv[]) {
 #endif
   };
 
+  auto findFeatures = [](const Ptr<Feature2D> &finder,
+      const vector<Mat> &images,
+      vector<detail::ImageFeatures> *features,
+      const string &features_desc,
+      TimingLogger *logger = nullptr) {
+    int images_n = images.size();
+
+    if (logger) logger->Reset(features_desc);
+    LOG(INFO) << features_desc;
+    for (int i = 0; i < images_n; i++) {
+      computeImageFeatures(finder, images[i], (*features)[i]);
+      (*features)[i].img_idx = i;
+      auto image_name = (stringstream() << "image #" << (i+1) << ", "
+          << images[i].cols << "x" << images[i].rows).str();
+      LOG(INFO) << "  " << image_name << ": " << (*features)[i].keypoints.size();
+      if (logger) logger->AddSplit(image_name);
+    }
+    // computeImageFeatures(finder, images, *features);
+    // logger->AddSplit("find");
+    if (logger) logger->DumpToLog();
+  };
+
   for (auto finder : finders) {
-    cout << endl;
+    LOG(INFO);
     findFeatures(finder.first, images, &features, finder.second, logger.get());
 
     // features show
