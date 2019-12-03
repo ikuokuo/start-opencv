@@ -84,8 +84,9 @@ int main(int argc, char const *argv[]) {
     for (int i = 0; i < images_n; i++) {
       computeImageFeatures(finder, images[i], (*features)[i]);
       (*features)[i].img_idx = i;
-      auto image_name = (stringstream() << "image #" << (i+1) << ", "
-          << images[i].cols << "x" << images[i].rows).str();
+      auto ss = stringstream();
+      ss << "image #" << (i+1) << ", " << images[i].cols << "x" << images[i].rows;
+      auto image_name = ss.str();
       LOG(INFO) << "  " << image_name << ": " << (*features)[i].keypoints.size();
       if (logger) logger->AddSplit(image_name);
     }
@@ -104,8 +105,9 @@ int main(int argc, char const *argv[]) {
       for (int i = 0; i < images_n; i++) {
         drawKeypoints(images[i], features[i].keypoints, img, Scalar(0, 255, 0),
             DrawMatchesFlags::DEFAULT);
-        imshow((stringstream() << "image #" << (i+1) << ", "
-            << img.cols << "x" << img.rows).str(), img);
+        auto ss = stringstream();
+        ss << "image #" << (i+1) << ", " << images[i].cols << "x" << images[i].rows;
+        imshow(ss.str(), img);
       }
       waitKey(0);
       destroyAllWindows();
