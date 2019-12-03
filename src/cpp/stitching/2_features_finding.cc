@@ -20,18 +20,18 @@ int main(int argc, char const *argv[]) {
   auto parser = optparse::OptionParser()
       .usage("usage: %prog [options]")
       .description("Features Finding");
-  parser.add_option("-s", "--show").dest("show")
-      .action("store_true").help("Show features in input images");
+  parser.add_option("-p", "--preview").dest("preview")
+      .action("store_true").help("Preview features in input images");
   parser.add_option("--work_megapix").dest("work_megapix")
       .type("float").set_default(0.6)
       .help("Resolution for image registration step. The default is %default Mpx.");
 
   auto options = parser.parse_args(argc, argv);
-  bool is_show = options.get("show");
+  bool preview = options.get("preview");
   float work_megapix = options.get("work_megapix");
 
   LOG(INFO) << "Options:" << endl
-      << "  show: " << (is_show ? "true" : "false") << endl
+      << "  preview: " << (preview ? "true" : "false") << endl
       << "  work_megapix: " << work_megapix << endl;
 
   // images
@@ -99,8 +99,8 @@ int main(int argc, char const *argv[]) {
     LOG(INFO);
     findFeatures(finder.first, images, &features, finder.second, logger.get());
 
-    // features show
-    if (is_show) {
+    // features preview
+    if (preview) {
       Mat img;
       for (int i = 0; i < images_n; i++) {
         drawKeypoints(images[i], features[i].keypoints, img, Scalar(0, 255, 0),
