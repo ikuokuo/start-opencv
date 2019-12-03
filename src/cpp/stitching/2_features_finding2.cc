@@ -70,7 +70,7 @@ int main(int argc, char const *argv[]) {
         is_work_scale_set = true;
       }
       resize(img_full, img, Size(), work_scale, work_scale, INTER_LINEAR_EXACT);
-      images.push_back(img);
+      images.push_back(img.clone());
     }
   }
   logger->AddSplit("scale");
