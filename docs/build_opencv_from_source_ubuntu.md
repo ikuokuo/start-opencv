@@ -44,6 +44,8 @@ export OPENCV_IPPICV_URL=file://$HOME/Downloads
 -->
 
 ```bash
+conda deactivate
+
 export SYS_PREFIX=`conda info -s | grep -Po "sys.prefix:\s*\K[/\w]*"`
 export OPENCV_CONTRIB=$HOME/Workspace/opencv_contrib
 
