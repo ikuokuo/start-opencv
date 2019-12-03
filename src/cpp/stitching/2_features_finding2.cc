@@ -130,8 +130,8 @@ int main(int argc, char const *argv[]) {
       auto ss = stringstream();
       ss << "image #" << (i+1) << ", " << images[i].cols << "x" << images[i].rows;
       imshow(ss.str(), img);
+      waitKey(0);
     }
-    waitKey(0);
     destroyAllWindows();
   }
 
