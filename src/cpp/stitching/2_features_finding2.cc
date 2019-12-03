@@ -83,7 +83,7 @@ int main(int argc, char const *argv[]) {
   vector<detail::ImageFeatures> features(images_n);
 
   Ptr<Feature2D> finder;
-  std::string features_desc;
+  string features_desc;
   if (features_type == "orb") {
     finder = ORB::create();
     features_desc = "ORB Features";
