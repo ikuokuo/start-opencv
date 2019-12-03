@@ -43,19 +43,43 @@ int main(int argc, char const *argv[]) {
       .usage("usage: %prog [options]")
       .description("Features Finding");
   parser.add_option("-s", "--show").dest("show")
-      .action("store_true")
-      .help("show features");
+      .action("store_true").help("Show features in input images");
+  parser.add_option("--work_megapix").dest("work_megapix")
+      .type("float").set_default(0.6)
+      .help("Resolution for image registration step. The default is %default Mpx.");
+
   auto options = parser.parse_args(argc, argv);
   bool is_show = options.get("show");
+  float work_megapix = options.get("work_megapix");
+
+  cout << "Options:" << endl
+       << "  show: " << (is_show ? "true" : "false") << endl
+       << "  work_megapix: " << work_megapix << endl
+       << endl;
 
   // images
   auto logger = TimingLogger::Create("Images");
-  vector<Mat> images{
+  vector<Mat> images_full{
     imread(samples::findFile(MY_DATA "/stitching/boat1.jpg")),
     imread(samples::findFile(MY_DATA "/stitching/newspaper1.jpg")),
   };
   logger->AddSplit("read");
+
+  // images scale
+  vector<Mat> images;
+  if (work_megapix < 0) {
+    images = move(images_full);
+  } else {
+    Mat img;
+    for (auto img_full : images_full) {
+      double work_scale = min(1.0, sqrt(work_megapix * 1e6 / img_full.size().area()));
+      resize(img_full, img, Size(), work_scale, work_scale, INTER_LINEAR_EXACT);
+      images.push_back(img);
+    }
+  }
+  logger->AddSplit("scale");
   logger->DumpToLog();
+  images_full.clear();
 
   // features finding
 
