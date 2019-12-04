@@ -7,10 +7,39 @@
 #include <utility>
 #include <vector>
 
-// #define LOG_PREFIX
-#define LOG_TIMING
+// log config
 
-#define LOG(severity) Logger((char *)__FILE__, __LINE__, "native", Logger::severity).stream()  // NOLINT
+// #define LOG_PREFIX
+#ifndef LOG_STREAM
+#  define LOG_STREAM std::cout
+#endif
+#ifndef LOG_MINLEVEL
+#  define LOG_MINLEVEL Logger::INFO
+#endif
+#ifndef LOG_V
+#  define LOG_V 0
+#endif
+
+#define LOG_TIMING
+#ifdef LOG_TIMING_OFF
+#  undef LOG_TIMING
+#endif
+#ifndef LOG_TIMING_STREAM
+#  define LOG_TIMING_STREAM std::cout
+#endif
+
+// log macros
+
+#define LOG_IF(severity, condition) !(condition) ? (void)0 : LoggerVoidify() & \
+    Logger((char *)__FILE__, __LINE__, "native", Logger::severity).stream()  // NOLINT
+
+#define LOG(severity) LOG_IF(severity, Logger::severity >= LOG_MINLEVEL)
+
+// VLOG macros always log at the INFO log level
+#define VLOG(n)       LOG_IF(INFO, Logger::INFO >= LOG_MINLEVEL && n <= LOG_V)
+#define VLOG_IS_ON(n) (n <= LOG_V)
+
+// other macros
 
 #if !defined(OS_PATH_SEP)
 #  if defined(_WIN32) || defined(__CYGWIN__)
@@ -25,15 +54,14 @@
 class Logger {
  public:
   enum Severity {
-    VERBOSE,
-    INFO,
-    WARNING,
-    ERROR,
-    FATAL,
+    INFO      = 0,
+    WARNING   = 1,
+    ERROR     = 2,
+    FATAL     = 3,
   };
 
   Logger(const char *file, int line, const char *tag, int severity,
-      std::ostream &os = std::cout)
+      std::ostream &os = LOG_STREAM)
     : file_(file), line_(line), tag_(tag), severity_(severity), ostream_(os) {
 #ifdef LOG_PREFIX
     StripBasename(std::string(file), &filename_only_);
@@ -96,6 +124,12 @@ class Logger {
   std::ostream &ostream_;
 };
 
+class LoggerVoidify {
+ public:
+  LoggerVoidify() = default;
+  void operator&(const std::ostream &/*s*/) {}
+};
+
 // TimingLogger
 
 class TimingLogger {
@@ -106,7 +140,7 @@ class TimingLogger {
   virtual void Reset(std::string /*label*/) {}
   virtual void Reset() {}
   virtual void AddSplit(std::string /*split_label*/) {}
-  virtual void DumpToLog(std::ostream &/*os*/ = std::cout) {}
+  virtual void DumpToLog(std::ostream &/*os*/ = LOG_TIMING_STREAM) {}
 };
 
 class TimingLoggerImpl : public TimingLogger {
@@ -133,7 +167,7 @@ class TimingLoggerImpl : public TimingLogger {
     split_times_.push_back(clock::now());
   }
 
-  void DumpToLog(std::ostream &os = std::cout) override {
+  void DumpToLog(std::ostream &os = LOG_TIMING_STREAM) override {
     using namespace std::chrono;
     os << label_ << ": begin" << std::endl;
     auto first = split_times_[0];
