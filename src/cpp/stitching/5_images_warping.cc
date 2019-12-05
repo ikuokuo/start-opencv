@@ -1,0 +1,536 @@
+#include <algorithm>
+#include <fstream>
+#include <regex>
+#include <vector>
+
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/stitching/detail/matchers.hpp>
+#include <opencv2/stitching/detail/motion_estimators.hpp>
+// #include <opencv2/stitching/detail/warpers.hpp>
+#include <opencv2/stitching/warpers.hpp>
+
+#ifdef HAVE_OPENCV_XFEATURES2D
+#include <opencv2/xfeatures2d/nonfree.hpp>
+#endif
+
+// #define LOG_V 1
+#include "common/logger.h"
+#include "common/optparse.h"
+
+using namespace std;
+using namespace cv;
+
+void checkValue(const string &value, const string &pattern, char delim = '|');
+void checkMatch(const string &value, const string &pattern);
+
+int main(int argc, char const *argv[]) {
+  auto applog = TimingLogger::Create("App");
+
+  // options
+  auto parser = optparse::OptionParser()
+      .usage("usage: %prog [options]\n"
+             "       %prog --work_megapix 0.6 --features orb --matcher homography --match_conf 0.3 --range_width -1 --conf_thresh 1 --save_graph graph.txt --estimator homography --ba ray --ba_refine_mask xxxxx --wave_correct horiz --warp compressedPlaneA2B1 --seam_megapix 0.1")
+      .description("Pairwise matching");
+  parser.add_option("-p", "--preview").dest("preview")
+      .action("store_true").help("Preview features in input images");
+  parser.add_option("--try_cuda").dest("try_cuda")
+      .action("store_true").help("Try to use CUDA. All default values are for CPU mode.");
+
+  auto group_m = optparse::OptionGroup("Motion Estimation");
+  group_m.add_option("--work_megapix").dest("work_megapix")
+      .type("float").set_default(0.6)
+      .help("Resolution for image registration step. The default is %default Mpx.");
+  group_m.add_option("--features").dest("features_type")
+      .type("string").set_default("orb")
+      .metavar("surf|orb|sift|akaze")
+      .help("Type of features used for images matching. The default is '%default'.");
+  group_m.add_option("--matcher").dest("matcher_type")
+      .type("string").set_default("homography")
+      .metavar("homography|affine")
+      .help("Matcher used for pairwise image matching. The default is '%default'.");
+  group_m.add_option("--match_conf").dest("match_conf")
+      .type("float")
+      .help("Confidence for feature matching step. The default is 0.65 for surf and 0.3 for orb.");
+  group_m.add_option("--range_width").dest("range_width")
+      .type("int").set_default(-1)
+      .help("Limit number of images to match with.");
+  group_m.add_option("--conf_thresh").dest("conf_thresh")
+      .type("float").set_default(1.0)
+      .help("Threshold for two images are from the same panorama confidence. The default is %default.");
+  group_m.add_option("--save_graph").dest("save_graph")
+      .type("string").metavar("FILENAME")
+      .help("Save matches graph represented in DOT language to a file."
+            "Labels description: Nm is number of matches, Ni is number of inliers, C is confidence.");
+  group_m.add_option("--estimator").dest("estimator_type")
+      .type("string").set_default("homography")
+      .metavar("homography|affine")
+      .help("Type of estimator used for transformation estimation. The default is '%default'.");
+  group_m.add_option("--ba").dest("ba_cost_func")
+      .type("string").set_default("ray")
+      .metavar("no|reproj|ray|affine")
+      .help("Bundle adjustment cost function. The default is '%default'.");
+  group_m.add_option("--ba_refine_mask").dest("ba_refine_mask")
+      .type("string").set_default("xxxxx")
+      .metavar("x_xxx")
+      .help("Set refinement mask for bundle adjustment. It looks like 'x_xxx',\n"
+            "where 'x' means refine respective parameter and '_' means don't\n"
+            "refine one, and has the following format:\n"
+            "<fx><skew><ppx><aspect><ppy>. The default mask is '%default'. If bundle\n"
+            "adjustment doesn't support estimation of selected parameter then\n"
+            "the respective flag is ignored.");
+  group_m.add_option("--wave_correct").dest("wave_correct")
+      .type("string").set_default("horiz")
+      .metavar("no|horiz|vert")
+      .help("Perform wave effect correction. The default is '%default'.");
+  parser.add_option_group(group_m);
+
+  auto group_c = optparse::OptionGroup("Compositing");
+  group_c.add_option("--warp").dest("warp_type")
+      .type("string").set_default("spherical")
+      .metavar("affine|plane|cylindrical|spherical|fisheye|stereographic|compressedPlaneA2B1|compressedPlaneA1.5B1|compressedPlanePortraitA2B1|compressedPlanePortraitA1.5B1|paniniA2B1|paniniA1.5B1|paniniPortraitA2B1|paniniPortraitA1.5B1|mercator|transverseMercator")
+      .help("Warp surface type. The default is '%default'.");
+  group_c.add_option("--seam_megapix").dest("seam_megapix")
+      .type("float").set_default(0.1)
+      .help("Resolution for seam estimation step. The default is %default Mpx.");
+  parser.add_option_group(group_c);
+
+  auto options = parser.parse_args(argc, argv);
+  bool preview = options.get("preview");
+  bool try_cuda = options.get("try_cuda");
+  // motion estimation
+  float work_megapix = options.get("work_megapix");
+  string features_type = options["features_type"];
+  string matcher_type = options["matcher_type"];
+  float match_conf = options.get("match_conf");
+  int range_width = options.get("range_width");
+  float conf_thresh = options.get("conf_thresh");
+  string save_graph = options["save_graph"];
+  string estimator_type = options["estimator_type"];
+  string ba_cost_func = options["ba_cost_func"];
+  string ba_refine_mask = options["ba_refine_mask"];
+  string wave_correct = options["wave_correct"];
+  // compositing
+  string warp_type = options["warp_type"];
+  float seam_megapix = options.get("seam_megapix");
+  {
+    checkValue(features_type, "surf|orb|sift|akaze");
+    checkValue(matcher_type, "homography|affine");
+    if (!options.is_set("match_conf")) {
+      if (features_type == "orb") match_conf = 0.3;
+      else if (features_type == "surf") match_conf = 0.65;
+    }
+    checkValue(estimator_type, "homography|affine");
+    checkValue(ba_cost_func, "no|reproj|ray|affine");
+    checkMatch(ba_refine_mask, "[_x]{5}");
+    checkValue(wave_correct, "no|horiz|vert");
+
+    checkValue(warp_type, "affine|plane|cylindrical|spherical|fisheye|stereographic|compressedPlaneA2B1|compressedPlaneA1.5B1|compressedPlanePortraitA2B1|compressedPlanePortraitA1.5B1|paniniA2B1|paniniA1.5B1|paniniPortraitA2B1|paniniPortraitA1.5B1|mercator|transverseMercator");
+
+    LOG(INFO) << "Options:" << endl
+        << "  preview: " << (preview ? "true" : "false") << endl
+        << "  try_cuda: " << (try_cuda ? "true" : "false") << endl
+        << endl
+        << "  work_megapix: " << work_megapix << endl
+        << "  features: " << features_type << endl
+        << "  matcher: " << matcher_type << endl
+        << "  match_conf: " << match_conf << endl
+        << "  range_width: " << range_width << endl
+        << "  conf_thresh: " << conf_thresh << endl
+        << "  save_graph: " << save_graph << endl
+        << "  estimator: " << estimator_type << endl
+        << "  ba: " << ba_cost_func << endl
+        << "  ba_refine_mask: " << ba_refine_mask << endl
+        << "  wave_correct: " << wave_correct << endl
+        << endl
+        << "  warp: " << warp_type << endl
+        << "  seam_megapix: " << seam_megapix << endl;
+  }
+  applog->AddSplit("options parsing");
+
+  // images (same size)
+  auto logger = TimingLogger::Create("Images Reading");
+  vector<Mat> images;
+  vector<string> images_name{
+    MY_DATA "/stitching/boat5.jpg",
+    MY_DATA "/stitching/boat2.jpg",
+    MY_DATA "/stitching/boat3.jpg",
+    MY_DATA "/stitching/boat4.jpg",
+    MY_DATA "/stitching/boat1.jpg",
+    MY_DATA "/stitching/boat6.jpg",
+  };
+  vector<Size> images_full_size;
+  {
+    // images read
+    for (auto name : images_name) {
+      auto img_full = imread(samples::findFile(name));
+      if (img_full.empty()) {
+        LOG(FATAL) << "Can't open image " << name;
+        return 1;
+      }
+      images.push_back(img_full);
+      images_full_size.push_back(img_full.size());
+    }
+    logger->AddSplit("read");
+  }
+  logger->DumpToLog();
+  LOG(INFO);
+  applog->AddSplit("images reading");
+
+  // features finding
+  int images_n = images.size();
+  vector<detail::ImageFeatures> features(images_n);
+  double seam_work_aspect = 1;
+  {
+    Ptr<Feature2D> finder;
+    string features_desc;
+    if (features_type == "orb") {
+      finder = ORB::create();
+      features_desc = "ORB Features";
+    } else if (features_type == "akaze") {
+      finder = AKAZE::create();
+      features_desc = "AKAZE Features";
+    }
+#ifdef HAVE_OPENCV_XFEATURES2D
+    else if (features_type == "surf") {  // NOLINT
+      finder = xfeatures2d::SURF::create();
+      features_desc = "SURF Features";
+    } else if (features_type == "sift") {
+      finder = xfeatures2d::SIFT::create();
+      features_desc = "SIFT Features";
+    }
+#endif
+    else {  // NOLINT
+      LOG(ERROR) << "Unknown 2D features type: " << features_type;
+      return 2;
+    }
+
+    double work_scale = 1, seam_scale = 1;
+    bool is_work_scale_set = false, is_seam_scale_set = false;
+
+    // features compute
+    logger->Reset(features_desc);
+    LOG(INFO) << features_desc;
+    Mat img;
+    for (int i = 0; i < images_n; i++) {
+      auto img_full = images[i];
+
+      auto ss = stringstream();
+      ss << "image #" << (i+1) << ", " << img_full.cols << "x" << img_full.rows;
+      auto img_name = ss.str();
+
+      // work scale
+      if (work_megapix < 0) {
+        img = img_full;
+        work_scale = 1;
+        is_work_scale_set = true;
+      } else {
+        if (!is_work_scale_set) {
+          work_scale = min(1.0, sqrt(work_megapix * 1e6 / img_full.size().area()));
+          is_work_scale_set = true;
+        }
+        resize(img_full, img, Size(), work_scale, work_scale, INTER_LINEAR_EXACT);
+      }
+
+      if (!is_seam_scale_set) {
+        seam_scale = min(1.0, sqrt(seam_megapix * 1e6 / img_full.size().area()));
+        seam_work_aspect = seam_scale / work_scale;
+        is_seam_scale_set = true;
+      }
+
+      // compute
+      computeImageFeatures(finder, img, features[i]);
+      features[i].img_idx = i;
+      LOG(INFO) << "  " << img_name << ": " << features[i].keypoints.size();
+
+      // preview
+      if (preview) {
+        drawKeypoints(img, features[i].keypoints, img, Scalar(0, 255, 0),
+            DrawMatchesFlags::DEFAULT);
+        imshow(img_name, img);
+        waitKey(0);
+      }
+
+      // seam scale
+      resize(img_full, img, Size(), seam_scale, seam_scale, INTER_LINEAR_EXACT);
+      images[i] = img.clone();
+
+      logger->AddSplit(img_name);
+    }
+    img.release();
+    logger->DumpToLog();
+  }
+  LOG(INFO);
+  applog->AddSplit("features finding");
+
+  // pairwise matching
+  logger->Reset("Pairwise Matching");
+  vector<detail::MatchesInfo> pairwise_matches;
+  {
+    Ptr<detail::FeaturesMatcher> matcher;
+    if (matcher_type == "affine") {
+      matcher = makePtr<detail::AffineBestOf2NearestMatcher>(false, try_cuda, match_conf);
+    } else if (range_width == -1) {
+      matcher = makePtr<detail::BestOf2NearestMatcher>(try_cuda, match_conf);
+    } else {
+      matcher = makePtr<detail::BestOf2NearestRangeMatcher>(range_width, try_cuda, match_conf);
+    }
+
+    (*matcher)(features, pairwise_matches);
+    matcher->collectGarbage();
+    logger->AddSplit("match");
+
+    LOG(INFO) << "Pairwise matches: " << pairwise_matches.size();
+    if (VLOG_IS_ON(2)) {
+      for (auto info : pairwise_matches) {
+        VLOG(2) << "  " << info.src_img_idx << " > " << info.dst_img_idx
+            << ", conf: " << info.confidence;
+      }
+    }
+  }
+  logger->DumpToLog();
+  LOG(INFO);
+  applog->AddSplit("pairwise matching");
+
+  // rotation estimation
+  logger->Reset("Rotation Estimation");
+  vector<detail::CameraParams> cameras;
+  float warped_image_scale;
+  {
+    // check if we should save matches graph
+    if (!save_graph.empty()) {
+      LOG(INFO) << "Saving matches graph: " << save_graph;
+      ofstream f(save_graph);
+      f << detail::matchesGraphAsString(images_name, pairwise_matches, conf_thresh);
+      logger->AddSplit("save graph");
+    }
+
+    // leave only images we are sure are from the same panorama
+    vector<int> indices = leaveBiggestComponent(features, pairwise_matches, conf_thresh);
+    {
+      vector<Mat> img_subset;
+      vector<String> img_name_subset;
+      vector<Size> img_full_size_subset;
+      for (size_t i = 0; i < indices.size(); ++i) {
+        auto indice = indices[i];
+        img_name_subset.push_back(images_name[indice]);
+        img_subset.push_back(images[indice]);
+        img_full_size_subset.push_back(images_full_size[indice]);
+      }
+
+      images = img_subset;
+      images_name = img_name_subset;
+      images_full_size = img_full_size_subset;
+
+      // check if we still have enough images
+      images_n = static_cast<int>(images_name.size());
+      if (images_n < 2) {
+        LOG(FATAL) << "Need more images";
+        return 1;
+      }
+      LOG(INFO) << "Leave images: " << images_n;
+      logger->AddSplit("leave images");
+    }
+
+    // estimate camera parameters
+    {
+      Ptr<detail::Estimator> estimator;
+      if (estimator_type == "affine") {
+        estimator = makePtr<detail::AffineBasedEstimator>();
+      } else {
+        estimator = makePtr<detail::HomographyBasedEstimator>();
+      }
+
+      if (!(*estimator)(features, pairwise_matches, cameras)) {
+        LOG(FATAL) << "Estimate camera parameters failed";
+        return 1;
+      }
+      logger->AddSplit("estimate params");
+
+      for (size_t i = 0; i < cameras.size(); ++i) {
+        Mat R;
+        cameras[i].R.convertTo(R, CV_32F);
+        cameras[i].R = R;
+        VLOG(1) << "Initial camera intrinsics #" << indices[i]+1
+            << ":\nK:\n" << cameras[i].K() << "\nR:\n" << cameras[i].R;
+      }
+      logger->AddSplit("convert params");
+    }
+
+    // refine camera parameters
+    {
+      Ptr<detail::BundleAdjusterBase> adjuster;
+      if (ba_cost_func == "reproj") adjuster = makePtr<detail::BundleAdjusterReproj>();
+      else if (ba_cost_func == "ray") adjuster = makePtr<detail::BundleAdjusterRay>();
+      else if (ba_cost_func == "affine") adjuster = makePtr<detail::BundleAdjusterAffinePartial>();
+      else if (ba_cost_func == "no") adjuster = makePtr<detail::NoBundleAdjuster>();
+      else {  // NOLINT
+        LOG(FATAL) << "Unknown bundle adjustment cost function: " << ba_cost_func;
+        return 2;
+      }
+      adjuster->setConfThresh(conf_thresh);
+      Mat_<uchar> refine_mask = Mat::zeros(3, 3, CV_8U);
+      if (ba_refine_mask[0] == 'x') refine_mask(0, 0) = 1;
+      if (ba_refine_mask[1] == 'x') refine_mask(0, 1) = 1;
+      if (ba_refine_mask[2] == 'x') refine_mask(0, 2) = 1;
+      if (ba_refine_mask[3] == 'x') refine_mask(1, 1) = 1;
+      if (ba_refine_mask[4] == 'x') refine_mask(1, 2) = 1;
+      adjuster->setRefinementMask(refine_mask);
+      if (!(*adjuster)(features, pairwise_matches, cameras)) {
+          LOG(FATAL) << "Refine camera parameters failed";
+          return 1;
+      }
+      logger->AddSplit("refine params");
+    }
+
+    // find median focal length
+    {
+      vector<double> focals;
+      for (size_t i = 0; i < cameras.size(); ++i) {
+        VLOG(1) << "Camera #" << indices[i]+1 << ":\nK:\n" << cameras[i].K() << "\nR:\n" << cameras[i].R;
+        focals.push_back(cameras[i].focal);
+      }
+
+      sort(focals.begin(), focals.end());
+      if (focals.size() % 2 == 1)
+        warped_image_scale = static_cast<float>(focals[focals.size() / 2]);
+      else
+        warped_image_scale = static_cast<float>(focals[focals.size() / 2 - 1] + focals[focals.size() / 2]) * 0.5f;
+
+      logger->AddSplit("find focals");
+    }
+
+    if (wave_correct != "no") {
+      auto kind = detail::WAVE_CORRECT_HORIZ;
+      if (wave_correct == "vert")
+        kind = detail::WAVE_CORRECT_VERT;
+
+      vector<Mat> rmats;
+      for (size_t i = 0; i < cameras.size(); ++i)
+        rmats.push_back(cameras[i].R.clone());
+      detail::waveCorrect(rmats, kind);
+      for (size_t i = 0; i < cameras.size(); ++i)
+        cameras[i].R = rmats[i];
+
+      logger->AddSplit("wave correct");
+    }
+  }
+  logger->DumpToLog();
+  LOG(INFO);
+  applog->AddSplit("rotation estimation");
+
+  // images warping
+  logger->Reset("Images Warping");
+  vector<Point> corners(images_n);
+  vector<UMat> masks_warped(images_n);
+  vector<UMat> images_warped(images_n);
+  vector<Size> sizes(images_n);
+  vector<UMat> masks(images_n);
+  {
+    // prepare images masks
+    for (int i = 0; i < images_n; ++i) {
+      masks[i].create(images[i].size(), CV_8U);
+      masks[i].setTo(Scalar::all(255));
+    }
+    logger->AddSplit("prepare masks");
+
+    // warp images and their masks
+
+    Ptr<WarperCreator> warper_creator;
+#ifdef HAVE_OPENCV_CUDAWARPING
+    if (try_cuda && cuda::getCudaEnabledDeviceCount() > 0) {
+      if (warp_type == "plane")
+        warper_creator = makePtr<PlaneWarperGpu>();
+      else if (warp_type == "cylindrical")
+        warper_creator = makePtr<CylindricalWarperGpu>();
+      else if (warp_type == "spherical")
+        warper_creator = makePtr<SphericalWarperGpu>();
+    } else  // NOLINT
+#endif
+    {
+      if (warp_type == "plane")
+        warper_creator = makePtr<PlaneWarper>();
+      else if (warp_type == "affine")
+        warper_creator = makePtr<AffineWarper>();
+      else if (warp_type == "cylindrical")
+        warper_creator = makePtr<CylindricalWarper>();
+      else if (warp_type == "spherical")
+        warper_creator = makePtr<SphericalWarper>();
+      else if (warp_type == "fisheye")
+        warper_creator = makePtr<FisheyeWarper>();
+      else if (warp_type == "stereographic")
+        warper_creator = makePtr<StereographicWarper>();
+      else if (warp_type == "compressedPlaneA2B1")
+        warper_creator = makePtr<CompressedRectilinearWarper>(2.0f, 1.0f);
+      else if (warp_type == "compressedPlaneA1.5B1")
+        warper_creator = makePtr<CompressedRectilinearWarper>(1.5f, 1.0f);
+      else if (warp_type == "compressedPlanePortraitA2B1")
+        warper_creator = makePtr<CompressedRectilinearPortraitWarper>(2.0f, 1.0f);
+      else if (warp_type == "compressedPlanePortraitA1.5B1")
+        warper_creator = makePtr<CompressedRectilinearPortraitWarper>(1.5f, 1.0f);
+      else if (warp_type == "paniniA2B1")
+        warper_creator = makePtr<PaniniWarper>(2.0f, 1.0f);
+      else if (warp_type == "paniniA1.5B1")
+        warper_creator = makePtr<PaniniWarper>(1.5f, 1.0f);
+      else if (warp_type == "paniniPortraitA2B1")
+        warper_creator = makePtr<PaniniPortraitWarper>(2.0f, 1.0f);
+      else if (warp_type == "paniniPortraitA1.5B1")
+        warper_creator = makePtr<PaniniPortraitWarper>(1.5f, 1.0f);
+      else if (warp_type == "mercator")
+        warper_creator = makePtr<MercatorWarper>();
+      else if (warp_type == "transverseMercator")
+        warper_creator = makePtr<TransverseMercatorWarper>();
+    }
+    if (!warper_creator) {
+      LOG(FATAL) << "Can't create the following warper '" << warp_type;
+      return 2;
+    }
+
+    Ptr<detail::RotationWarper> warper = warper_creator->create(
+        static_cast<float>(warped_image_scale * seam_work_aspect));
+    for (int i = 0; i < images_n; ++i) {
+      Mat_<float> K;
+      cameras[i].K().convertTo(K, CV_32F);
+      float swa = static_cast<float>(seam_work_aspect);
+      K(0,0) *= swa; K(0,2) *= swa;  // NOLINT
+      K(1,1) *= swa; K(1,2) *= swa;  // NOLINT
+
+      corners[i] = warper->warp(images[i], K, cameras[i].R, INTER_LINEAR, BORDER_REFLECT, images_warped[i]);
+      sizes[i] = images_warped[i].size();
+
+      warper->warp(masks[i], K, cameras[i].R, INTER_NEAREST, BORDER_CONSTANT, masks_warped[i]);
+    }
+
+    vector<UMat> images_warped_f(images_n);
+    for (int i = 0; i < images_n; ++i)
+      images_warped[i].convertTo(images_warped_f[i], CV_32F);
+
+    logger->AddSplit("warp images");
+  }
+  logger->DumpToLog();
+  LOG(INFO);
+  applog->AddSplit("images warping");
+
+  applog->DumpToLog();
+  return 0;
+}
+
+void checkValue(const string &value, const string &pattern, char delim) {
+  vector<string> tokens;
+  stringstream ss(pattern);
+  string token;
+  while (getline(ss, token, delim)) {
+    tokens.push_back(token);
+  }
+  if (find(begin(tokens), end(tokens), value) == end(tokens)) {
+    LOG(FATAL) << "Bad option value: " << value << " (" << pattern << ")";
+  }
+}
+
+void checkMatch(const string &value, const string &pattern) {
+  regex re(pattern);
+  if (!regex_match(value, re)) {
+    LOG(FATAL) << "Bad option value: " << value << " (" << pattern << ")";
+  }
+}

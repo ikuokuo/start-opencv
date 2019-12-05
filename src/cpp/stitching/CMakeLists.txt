@@ -22,6 +22,12 @@ set(cv_names
   1_stitcher
   2_features_finding
   2_features_finding2
+  3_images_matching
+  4_rotation_estimation
+  5_images_warping
+  6_exposure_compensation
+  7_seam_estimation
+  8_image_blenders
 )
 
 foreach(cv_name IN LISTS cv_names)
