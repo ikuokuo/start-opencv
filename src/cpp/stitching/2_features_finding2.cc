@@ -28,7 +28,7 @@ int main(int argc, char const *argv[]) {
   parser.add_option("--features").dest("features_type")
       .type("string").set_default("orb")
       .metavar("surf|orb|sift|akaze")
-      .help("Type of features used for images matching. The default is %default.");
+      .help("Type of features used for images matching. The default is '%default'.");
 
   auto options = parser.parse_args(argc, argv);
   bool preview = options.get("preview");
