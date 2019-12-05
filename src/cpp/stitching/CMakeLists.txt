@@ -28,6 +28,7 @@ set(cv_names
   6_exposure_compensation
   7_seam_estimation
   8_image_blenders
+  8_image_blenders2
 )
 
 foreach(cv_name IN LISTS cv_names)
