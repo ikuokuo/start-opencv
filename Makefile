@@ -13,6 +13,8 @@ BUILD_DIR ?= _build
 OUTPUT_DIR ?= _output
 INSTALL_DIR ?= _install
 
+OPENCV_DIR ?= ${HOME}/opencv-4.1.2/lib/cmake
+
 CMAKE ?= cmake
 CMAKE_OPTIONS ?= \
 	-DCMAKE_BUILD_TYPE=Release \
@@ -43,7 +45,9 @@ endef
 .PHONY: build
 build:
 	@$(call md,$(BUILD_DIR))
-	@cd $(BUILD_DIR); \
+	@[ -z $$OpenCV_DIR ] && export OpenCV_DIR=${OPENCV_DIR}; \
+	echo OpenCV_DIR: $$OpenCV_DIR; \
+	cd $(BUILD_DIR); \
 	$(CMAKE) $(CMAKE_OPTIONS) ..; \
 	make $(MAKE_OPTIONS)
 
