@@ -5,7 +5,7 @@
       "includePath": [
         "${workspaceFolder}/**",
         "/Users/John/opencv-4.1.2/include/opencv4",
-        "/usr/local/opt/opencv/include/opencv4"
+        "/home/john/opencv-4.1.2/include/opencv4"
       ],
       "defines": [],
       "macFrameworkPath": [
