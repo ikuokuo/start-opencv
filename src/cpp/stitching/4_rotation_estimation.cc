@@ -366,6 +366,7 @@ int main(int argc, char const *argv[]) {
 
       logger->AddSplit("find focals");
     }
+    (void)warped_image_scale;
 
     if (wave_correct != "no") {
       auto kind = detail::WAVE_CORRECT_HORIZ;
