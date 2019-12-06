@@ -504,50 +504,53 @@ int main(int argc, char const *argv[]) {
     logger->AddSplit("prepare masks");
 
     // warp images and their masks
-
+    if (warp_type == "plane") {
 #ifdef HAVE_OPENCV_CUDAWARPING
-    if (try_cuda && cuda::getCudaEnabledDeviceCount() > 0) {
-      if (warp_type == "plane")
+      if (try_cuda && cuda::getCudaEnabledDeviceCount() > 0)
         warper_creator = makePtr<PlaneWarperGpu>();
-      else if (warp_type == "cylindrical")
-        warper_creator = makePtr<CylindricalWarperGpu>();
-      else if (warp_type == "spherical")
-        warper_creator = makePtr<SphericalWarperGpu>();
-    } else  // NOLINT
+      else
 #endif
-    {
-      if (warp_type == "plane")
         warper_creator = makePtr<PlaneWarper>();
-      else if (warp_type == "affine")
-        warper_creator = makePtr<AffineWarper>();
-      else if (warp_type == "cylindrical")
+    } else if (warp_type == "affine") {
+      warper_creator = makePtr<AffineWarper>();
+    } else if (warp_type == "cylindrical") {
+#ifdef HAVE_OPENCV_CUDAWARPING
+      if (try_cuda && cuda::getCudaEnabledDeviceCount() > 0)
+        warper_creator = makePtr<CylindricalWarperGpu>();
+      else
+#endif
         warper_creator = makePtr<CylindricalWarper>();
-      else if (warp_type == "spherical")
+    } else if (warp_type == "spherical") {
+#ifdef HAVE_OPENCV_CUDAWARPING
+      if (try_cuda && cuda::getCudaEnabledDeviceCount() > 0)
+        warper_creator = makePtr<SphericalWarperGpu>();
+      else
+#endif
         warper_creator = makePtr<SphericalWarper>();
-      else if (warp_type == "fisheye")
-        warper_creator = makePtr<FisheyeWarper>();
-      else if (warp_type == "stereographic")
-        warper_creator = makePtr<StereographicWarper>();
-      else if (warp_type == "compressedPlaneA2B1")
-        warper_creator = makePtr<CompressedRectilinearWarper>(2.0f, 1.0f);
-      else if (warp_type == "compressedPlaneA1.5B1")
-        warper_creator = makePtr<CompressedRectilinearWarper>(1.5f, 1.0f);
-      else if (warp_type == "compressedPlanePortraitA2B1")
-        warper_creator = makePtr<CompressedRectilinearPortraitWarper>(2.0f, 1.0f);
-      else if (warp_type == "compressedPlanePortraitA1.5B1")
-        warper_creator = makePtr<CompressedRectilinearPortraitWarper>(1.5f, 1.0f);
-      else if (warp_type == "paniniA2B1")
-        warper_creator = makePtr<PaniniWarper>(2.0f, 1.0f);
-      else if (warp_type == "paniniA1.5B1")
-        warper_creator = makePtr<PaniniWarper>(1.5f, 1.0f);
-      else if (warp_type == "paniniPortraitA2B1")
-        warper_creator = makePtr<PaniniPortraitWarper>(2.0f, 1.0f);
-      else if (warp_type == "paniniPortraitA1.5B1")
-        warper_creator = makePtr<PaniniPortraitWarper>(1.5f, 1.0f);
-      else if (warp_type == "mercator")
-        warper_creator = makePtr<MercatorWarper>();
-      else if (warp_type == "transverseMercator")
-        warper_creator = makePtr<TransverseMercatorWarper>();
+    } else if (warp_type == "fisheye") {
+      warper_creator = makePtr<FisheyeWarper>();
+    } else if (warp_type == "stereographic") {
+      warper_creator = makePtr<StereographicWarper>();
+    } else if (warp_type == "compressedPlaneA2B1") {
+      warper_creator = makePtr<CompressedRectilinearWarper>(2.0f, 1.0f);
+    } else if (warp_type == "compressedPlaneA1.5B1") {
+      warper_creator = makePtr<CompressedRectilinearWarper>(1.5f, 1.0f);
+    } else if (warp_type == "compressedPlanePortraitA2B1") {
+      warper_creator = makePtr<CompressedRectilinearPortraitWarper>(2.0f, 1.0f);
+    } else if (warp_type == "compressedPlanePortraitA1.5B1") {
+      warper_creator = makePtr<CompressedRectilinearPortraitWarper>(1.5f, 1.0f);
+    } else if (warp_type == "paniniA2B1") {
+      warper_creator = makePtr<PaniniWarper>(2.0f, 1.0f);
+    } else if (warp_type == "paniniA1.5B1") {
+      warper_creator = makePtr<PaniniWarper>(1.5f, 1.0f);
+    } else if (warp_type == "paniniPortraitA2B1") {
+      warper_creator = makePtr<PaniniPortraitWarper>(2.0f, 1.0f);
+    } else if (warp_type == "paniniPortraitA1.5B1") {
+      warper_creator = makePtr<PaniniPortraitWarper>(1.5f, 1.0f);
+    } else if (warp_type == "mercator") {
+      warper_creator = makePtr<MercatorWarper>();
+    } else if (warp_type == "transverseMercator") {
+      warper_creator = makePtr<TransverseMercatorWarper>();
     }
     if (!warper_creator) {
       LOG(FATAL) << "Can't create the following warper '" << warp_type;
