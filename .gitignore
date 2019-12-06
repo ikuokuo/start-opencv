@@ -8,5 +8,6 @@ _build/
 _install/
 _output/
 
+/docs/output/
 /result.jpg
 /test.txt

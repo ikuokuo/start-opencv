@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# e.g.
+#   bash docs/get_output.sh -c cpp_cmds_stitching.sh -o output/cpp/stitching
+#   bash docs/get_output.sh -c cpp_cmds_stitching_try_cuda.sh -o output/cpp/stitching_try_cuda
 
 BASE_DIR=$(cd "$(dirname "$0")" && pwd)
 ROOT_DIR=$(realpath "$BASE_DIR/..")
@@ -11,7 +14,7 @@ DATE="date"
 # options
 
 USAGE="Usage: bash get_output.sh -c <cmds_path> -o <out_dir>\n
-  e.g. bash get_output.sh -c cpp_stitching_cmds.sh -o output/cpp/stitching"
+  e.g. bash get_output.sh -c cpp_cmds_stitching.sh -o output/cpp/stitching"
 
 while getopts ":c:o:h" opt; do
   case $opt in
