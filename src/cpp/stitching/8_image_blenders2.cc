@@ -629,19 +629,19 @@ int main(int argc, char const *argv[]) {
     } else if (seam_find_type == "voronoi") {
       seam_finder = makePtr<detail::VoronoiSeamFinder>();
     } else if (seam_find_type == "gc_color") {
-#ifdef HAVE_OPENCV_CUDALEGACY
-      if (try_cuda && cuda::getCudaEnabledDeviceCount() > 0)
-        seam_finder = makePtr<detail::GraphCutSeamFinderGpu>(detail::GraphCutSeamFinderBase::COST_COLOR);
-      else
-#endif
-        seam_finder = makePtr<detail::GraphCutSeamFinder>(detail::GraphCutSeamFinderBase::COST_COLOR);
+// #ifdef HAVE_OPENCV_CUDALEGACY
+//       if (try_cuda && cuda::getCudaEnabledDeviceCount() > 0)
+//         seam_finder = makePtr<detail::GraphCutSeamFinderGpu>(detail::GraphCutSeamFinderBase::COST_COLOR);
+//       else
+// #endif
+      seam_finder = makePtr<detail::GraphCutSeamFinder>(detail::GraphCutSeamFinderBase::COST_COLOR);
     } else if (seam_find_type == "gc_colorgrad") {
-#ifdef HAVE_OPENCV_CUDALEGACY
-      if (try_cuda && cuda::getCudaEnabledDeviceCount() > 0)
-        seam_finder = makePtr<detail::GraphCutSeamFinderGpu>(detail::GraphCutSeamFinderBase::COST_COLOR_GRAD);
-      else
-#endif
-        seam_finder = makePtr<detail::GraphCutSeamFinder>(detail::GraphCutSeamFinderBase::COST_COLOR_GRAD);
+// #ifdef HAVE_OPENCV_CUDALEGACY
+//       if (try_cuda && cuda::getCudaEnabledDeviceCount() > 0)
+//         seam_finder = makePtr<detail::GraphCutSeamFinderGpu>(detail::GraphCutSeamFinderBase::COST_COLOR_GRAD);
+//       else
+// #endif
+      seam_finder = makePtr<detail::GraphCutSeamFinder>(detail::GraphCutSeamFinderBase::COST_COLOR_GRAD);
     } else if (seam_find_type == "dp_color") {
       seam_finder = makePtr<detail::DpSeamFinder>(detail::DpSeamFinder::COLOR);
     } else if (seam_find_type == "dp_colorgrad") {
