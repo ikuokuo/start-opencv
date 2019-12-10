@@ -1,13 +1,11 @@
 set(MY_CURR ${CMAKE_CURRENT_LIST_DIR})
 
 get_filename_component(MY_NAME ${MY_CURR} NAME)
-set(_outdir "${MY_ROOT}/_output")
 set_outdir(
-  ARCHIVE "${_outdir}/lib/${MY_NAME}"
-  LIBRARY "${_outdir}/lib/${MY_NAME}"
-  RUNTIME "${_outdir}/bin/${MY_NAME}"
+  ARCHIVE "${MY_OUTPUT}/lib/${MY_NAME}"
+  LIBRARY "${MY_OUTPUT}/lib/${MY_NAME}"
+  RUNTIME "${MY_OUTPUT}/bin/${MY_NAME}"
 )
-unset(_outdir)
 
 ## targets
 

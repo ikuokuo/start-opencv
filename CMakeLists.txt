@@ -44,13 +44,12 @@ status_var(OpenCV_LIBS)
 
 # targets
 
-set(_outdir "${MY_ROOT}/_output")
+set(MY_OUTPUT "${MY_ROOT}/_output")
 set_outdir(
-  ARCHIVE "${_outdir}/lib"
-  LIBRARY "${_outdir}/lib"
-  RUNTIME "${_outdir}/bin"
+  ARCHIVE "${MY_OUTPUT}/lib"
+  LIBRARY "${MY_OUTPUT}/lib"
+  RUNTIME "${MY_OUTPUT}/bin"
 )
-unset(_outdir)
 
 include_directories(
   ${MY_ROOT}/src/cpp
