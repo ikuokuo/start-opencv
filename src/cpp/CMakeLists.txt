@@ -1,6 +1,6 @@
 set(MY_CURR ${CMAKE_CURRENT_LIST_DIR})
 
-# add_cv_executable(NAME outdir SRCS srcs LIBS libs)
+# add_cv_executable(NAME SRCS srcs LIBS libs)
 macro(add_cv_executable NAME)
   set(options)
   set(oneValueArgs)
