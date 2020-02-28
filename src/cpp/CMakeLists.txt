@@ -26,4 +26,5 @@ macro(add_cv_executable NAME)
 endmacro()
 
 add_subdirectory(${MY_CURR}/camera)
+add_subdirectory(${MY_CURR}/detection)
 add_subdirectory(${MY_CURR}/stitching)

@@ -1,0 +1,6 @@
+/yolov3.weights
+/yolov3.cfg
+/coco.names
+
+/*out*.avi
+/*out*.jpg
