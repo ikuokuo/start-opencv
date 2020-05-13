@@ -9,12 +9,15 @@ Python,
 ```bash
 brew install pyenv
 
-# wget http://mirrors.sohu.com/python/3.7.0/Python-3.7.0.tar.xz -P ~/.pyenv/cache/
+pyenv install anaconda3-2019.10
+pyenv global anaconda3-2019.10
+```
+
+<!--
 env PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install 3.7.0
 pyenv global 3.7.0
-
 pip install numpy
-```
+-->
 
 <!--
 CUDA,
@@ -34,15 +37,15 @@ EOF
 ## Get OpenCV
 
 ```bash
-git clone -b 4.1.2 https://github.com/opencv/opencv.git
-git clone -b 4.1.2 https://github.com/opencv/opencv_contrib.git
+git clone -b 4.3.0 https://github.com/opencv/opencv.git
+git clone -b 4.3.0 https://github.com/opencv/opencv_contrib.git
 ```
 
 ## Build OpenCV
 
 <!--
 Download,
-  https://raw.githubusercontent.com/opencv/opencv_3rdparty/32e315a5b106a7b89dbed51c28f8120a48b368b4/ippicv/ippicv_2019_mac_intel64_general_20180723.tgz
+  https://raw.githubusercontent.com/opencv/opencv_3rdparty/a56b6ac6f030c312b2dce17430eef13aed9af274/ippicv/ippicv_2020_mac_intel64_20191018_general.tgz
 To,
   $HOME/Downloads/ippicv/
 export OPENCV_IPPICV_URL=file://$HOME/Downloads
@@ -50,12 +53,12 @@ export OPENCV_IPPICV_URL=file://$HOME/Downloads
 
 ```bash
 export PYENV_PREFIX=`pyenv prefix`
-export OPENCV_CONTRIB=$HOME/Workspace/opencv_contrib
+export OPENCV_CONTRIB=$HOME/Workspace/Star/opencv_contrib
 
 mkdir _build; cd _build
 
 cmake -DCMAKE_BUILD_TYPE=Release \
--DCMAKE_INSTALL_PREFIX=$HOME/opencv-4.1.2 \
+-DCMAKE_INSTALL_PREFIX=$HOME/opencv-4.3.0 \
 \
 -DOPENCV_ENABLE_NONFREE=ON \
 -DOPENCV_EXTRA_MODULES_PATH=$OPENCV_CONTRIB/modules \
@@ -80,7 +83,7 @@ make install
 ## Start OpenCV
 
 ```bash
-export PYTHONPATH=$HOME/opencv-4.1.2/lib/python3.7/site-packages:$PYTHONPATH
+export PYTHONPATH=$HOME/opencv-4.3.0/lib/python3.7/site-packages:$PYTHONPATH
 python - <<EOF
 import cv2
 print(cv2.__version__)
