@@ -2,7 +2,7 @@
 
 [OpenCV]: https://www.opencv.org/
 
-[![Status](https://img.shields.io/badge/OpenCV-4.1.2-brightgreen)](https://github.com/opencv/opencv/tree/4.1.2)
+[![Status](https://img.shields.io/badge/OpenCV-4.3.0-brightgreen)](https://github.com/opencv/opencv/tree/4.3.0)
 
 ## Cpp
 

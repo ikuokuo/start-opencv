@@ -7,7 +7,7 @@
 [Build OpenCV from source](../build_opencv_from_source_ubuntu.md),
 
 ```bash
-export OpenCV_DIR=$HOME/opencv-4.1.2/lib/cmake
+export OpenCV_DIR=$HOME/opencv-4.3.0/lib/cmake
 ```
 
 ### macOS
@@ -15,7 +15,7 @@ export OpenCV_DIR=$HOME/opencv-4.1.2/lib/cmake
 [Build OpenCV from source](../build_opencv_from_source_macos.md),
 
 ```bash
-export OpenCV_DIR=$HOME/opencv-4.1.2/lib/cmake
+export OpenCV_DIR=$HOME/opencv-4.3.0/lib/cmake
 ```
 
 Or install OpenCV with `brew`,
