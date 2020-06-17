@@ -1,5 +1,6 @@
 #include <vector>
 
+#include <opencv2/features2d.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
@@ -66,9 +67,14 @@ int main(int argc, char const *argv[]) {
   vector<pair<Ptr<Feature2D>, string>> finders{
     {ORB::create(), "ORB Features"},
     {AKAZE::create(), "AKAZE Features"},
+#ifdef HAVE_OPENCV_FEATURES2D_SIFT
+    {SIFT::create(), "AKAZE Features"},
+#endif
 #ifdef HAVE_OPENCV_XFEATURES2D
     {xfeatures2d::SURF::create(), "SURF Features"},
+#ifdef HAVE_OPENCV_XFEATURES2D_SIFT
     {xfeatures2d::SIFT::create(), "SIFT Features"},
+#endif
 #endif
   };
 

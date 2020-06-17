@@ -424,14 +424,21 @@ int main(int argc, char* argv[])
     {
         finder = AKAZE::create();
     }
+#ifdef HAVE_OPENCV_FEATURES2D_SIFT
+    else if (features_type == "sift") {
+        finder = SIFT::create();
+    }
+#endif
 #ifdef HAVE_OPENCV_XFEATURES2D
     else if (features_type == "surf")
     {
         finder = xfeatures2d::SURF::create();
     }
+#ifdef HAVE_OPENCV_XFEATURES2D_SIFT
     else if (features_type == "sift") {
         finder = xfeatures2d::SIFT::create();
     }
+#endif
 #endif
     else
     {

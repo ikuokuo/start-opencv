@@ -22,7 +22,7 @@ CMAKE_OPTIONS ?= \
 # make CMAKE_OPTIONS=\"-DCMAKE_BUILD_TYPE=Release\ -DCMAKE_INSTALL_PREFIX=_install\"
 
 INIT_OPTIONS ?=
-MAKE_OPTIONS ?=
+MAKE_OPTIONS ?= -j$$(nproc)
 
 # Functions
 

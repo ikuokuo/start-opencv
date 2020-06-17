@@ -42,6 +42,12 @@ find_package(OpenCV 4 REQUIRED)
 status_var(OpenCV_INCLUDE_DIRS)
 status_var(OpenCV_LIBS)
 
+if(OpenCV_VERSION VERSION_GREATER "4.3.0")
+  add_definitions(-DHAVE_OPENCV_FEATURES2D_SIFT)
+elseif(OpenCV_VERSION VERSION_LESS "4.3.0")
+  add_definitions(-DHAVE_OPENCV_XFEATURES2D_SIFT)
+endif()
+
 # targets
 
 set(MY_OUTPUT "${MY_ROOT}/_output")

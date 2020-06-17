@@ -3,6 +3,7 @@
 #include <regex>
 #include <vector>
 
+#include <opencv2/features2d.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
@@ -227,14 +228,23 @@ int main(int argc, char const *argv[]) {
       finder = AKAZE::create();
       features_desc = "AKAZE Features";
     }
+#ifdef HAVE_OPENCV_FEATURES2D_SIFT
+    else if (features_type == "sift") {
+      finder = SIFT::create();
+      features_desc = "SIFT Features";
+    }
+#endif
 #ifdef HAVE_OPENCV_XFEATURES2D
     else if (features_type == "surf") {  // NOLINT
       finder = xfeatures2d::SURF::create();
       features_desc = "SURF Features";
-    } else if (features_type == "sift") {
+    }
+#ifdef HAVE_OPENCV_XFEATURES2D_SIFT
+    else if (features_type == "sift") {
       finder = xfeatures2d::SIFT::create();
       features_desc = "SIFT Features";
     }
+#endif
 #endif
     else {  // NOLINT
       LOG(ERROR) << "Unknown 2D features type: " << features_type;
