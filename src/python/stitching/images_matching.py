@@ -102,7 +102,7 @@ def _main():
 
     keypoints = img_fea.getKeypoints()
     print(f"{name} {img.shape[1]}x{img.shape[0]} {work_scale:.2f}, "
-          f"keypoints: {len(keypoints)},  cost: {time.time()-t:.2f} s")
+          f"keypoints: {len(keypoints)}, cost: {time.time()-t:.2f} s")
 
     images.append(img)
 
@@ -149,7 +149,6 @@ def _main():
   img_subset = []
   img_names_subset = []
   full_img_sizes_subset = []
-  num_images = len(indices)
 
   for i in range(len(indices)):
     indice = indices[i, 0]
