@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # pylint: disable=missing-docstring
+import os
 import sys
 import time
 
@@ -135,17 +136,26 @@ def _main():
   else:
     matcher = cv.detail.BestOf2NearestRangeMatcher_create(range_width, try_cuda, match_conf)
 
-  p = matcher.apply2(features)
-
+  matches = matcher.apply2(features)
   matcher.collectGarbage()
 
+  num_images = len(img_names)
+  print(f"\nMatches size: {num_images}")
+  for i in range(num_images):
+    print(f"  {i} {os.path.basename(img_names[i])} >")
+    for j in range(num_images):
+      info = matches[i*num_images + j]
+      print(f"    {info.dst_img_idx}, conf: {info.confidence}")
+
   if save_graph:
+    # Image Stitching details with OpenCV
+    #  https://stackoverflow.com/questions/26364594/image-stitching-details-with-opencv
     f = open(save_graph_to, "w")
-    f.write(cv.detail.matchesGraphAsString(img_names, p, conf_thresh))
+    f.write(cv.detail.matchesGraphAsString(img_names, matches, conf_thresh))
     f.close()
 
-  indices = cv.detail.leaveBiggestComponent(features, p, 0.3)
-  print(f"\nMatches indices: {[i[0] for i in indices]}")
+  indices = cv.detail.leaveBiggestComponent(features, matches, 0.3)
+  print(f"Matches indices: {[i[0] for i in indices]}")
 
   img_subset = []
   img_names_subset = []
