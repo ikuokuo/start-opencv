@@ -71,7 +71,7 @@ def _main():
   images = []
 
   print()
-  for name in img_names:
+  for idx, name in enumerate(img_names):
     full_img = cv.imread(cv.samples.findFile(name))
     if full_img is None:
       sys.exit(f"Cannot read image {name}")
@@ -91,6 +91,7 @@ def _main():
     t = time.time()
 
     img_fea = cv.detail.computeImageFeatures2(finder, img)
+    img_fea.img_idx = idx
     features.append(img_fea)
 
     keypoints = img_fea.getKeypoints()
@@ -117,7 +118,7 @@ def _main():
   #  https://docs.opencv.org/master/dc/dc3/tutorial_py_matcher.html
   # Geometric Transformations of Images
   #  https://docs.opencv.org/master/da/d6e/tutorial_py_geometric_transformations.html
-  # AffineBestOf2NearestMatcher
+  # BestOf2NearestMatcher
   #  opencv/modules/stitching/src/matchers.cpp
   # https://github.com/Mostafa-Shabani/Find_Overlap_OpenCV/blob/master/Overlap.cpp
   # https://medium.com/analytics-vidhya/image-stitching-with-opencv-and-python-1ebd9e0a6d78

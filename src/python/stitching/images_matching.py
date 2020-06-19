@@ -78,7 +78,7 @@ def _main():
   images = []
 
   print()
-  for name in img_names:
+  for idx, name in enumerate(img_names):
     full_img = cv.imread(cv.samples.findFile(name))
     if full_img is None:
       sys.exit(f"Cannot read image {name}")
@@ -98,6 +98,7 @@ def _main():
     t = time.time()
 
     img_fea = cv.detail.computeImageFeatures2(finder, img)
+    img_fea.img_idx = idx
     features.append(img_fea)
 
     keypoints = img_fea.getKeypoints()
