@@ -13,7 +13,7 @@ BUILD_DIR ?= _build
 OUTPUT_DIR ?= _output
 INSTALL_DIR ?= _install
 
-OPENCV_DIR ?= ${HOME}/opencv-4.3.0/lib/cmake
+OPENCV_DIR ?= ${HOME}/opencv-4.5.0/lib/cmake
 
 CMAKE ?= cmake
 CMAKE_OPTIONS ?= \
