@@ -68,7 +68,47 @@ cmake -DCMAKE_BUILD_TYPE=Release \
 
 make -j$(nproc)
 make install
+
+cd $HOME
+ln -sf opencv-4.5.0 opencv-4
 ```
+
+<!--
+conda deactivate
+
+export CONDA_HOME=`conda info -s | grep -Po "sys.prefix:\s*\K[/\w]*"`
+export OPENCV_CONTRIB=$HOME/Codes/star/opencv_contrib
+
+cd $HOME/Codes/star/opencv/
+mkdir _build; cd _build
+
+cmake -DCMAKE_BUILD_TYPE=Release \
+-DCMAKE_INSTALL_PREFIX=$HOME/opencv-cuda-4.5.1 \
+-DOPENCV_EXTRA_MODULES_PATH=$OPENCV_CONTRIB/modules \
+\
+-DPYTHON_EXECUTABLE=$CONDA_HOME/bin/python3.8 \
+-DPYTHON3_EXECUTABLE=$CONDA_HOME/bin/python3.8 \
+-DPYTHON3_LIBRARY=$CONDA_HOME/lib/libpython3.8.so \
+-DPYTHON3_INCLUDE_DIR=$CONDA_HOME/include/python3.8 \
+-DPYTHON3_NUMPY_INCLUDE_DIRS=$CONDA_HOME/lib/python3.8/site-packages/numpy/core/include \
+-DBUILD_opencv_python2=OFF \
+-DBUILD_opencv_python3=ON \
+\
+-DWITH_CUDA=ON \
+-DCUDA_ARCH_BIN="8.0" \
+-DCUDA_ARCH_PTX="" \
+\
+-DBUILD_DOCS=OFF \
+-DBUILD_EXAMPLES=OFF \
+-DBUILD_TESTS=OFF \
+..
+
+make -j$(nproc)
+make install
+
+cd $HOME
+ln -sf opencv-cuda-4.5.1 opencv-cuda-4
+-->
 
 ## Start OpenCV
 
