@@ -71,12 +71,15 @@ cmake -DCMAKE_BUILD_TYPE=Release \
 
 make -j`nproc`
 make install
+
+cd $HOME
+ln -sf opencv-4.5.0 opencv-4
 ```
 
 ## Start OpenCV
 
 ```bash
-export PYTHONPATH=$HOME/opencv-4.5.0/lib/python3.8/site-packages:$PYTHONPATH
+export PYTHONPATH=$HOME/opencv-4/lib/python3.8/site-packages:$PYTHONPATH
 python - <<EOF
 import cv2
 print(cv2.__version__)
