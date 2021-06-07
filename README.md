@@ -14,4 +14,5 @@
 
 * [Getting Started](docs/python/getting_started.md)
 * [Images stitching](docs/python/images_stitching.md)
+* [Image Processing](docs/python/image_processing.md)
 * [Object Detection](docs/python/object_detection_yolo.md)
