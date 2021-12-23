@@ -8,7 +8,7 @@ Python,
 
 ```bash
 # https://www.anaconda.com/distribution/
-bash Anaconda3-2021.05-Linux-x86_64.sh
+bash Anaconda3-2021.11-Linux-x86_64.sh
 ```
 
 <!--
@@ -32,8 +32,8 @@ EOF
 ## Get OpenCV
 
 ```bash
-git clone -b 4.5.2 --depth 1 https://github.com/opencv/opencv.git
-git clone -b 4.5.2 --depth 1 https://github.com/opencv/opencv_contrib.git
+git clone -b 4.5.4 --depth 1 https://github.com/opencv/opencv.git
+git clone -b 4.5.4 --depth 1 https://github.com/opencv/opencv_contrib.git
 ```
 
 ## Build OpenCV
@@ -42,20 +42,20 @@ git clone -b 4.5.2 --depth 1 https://github.com/opencv/opencv_contrib.git
 conda deactivate
 
 export CONDA_HOME=`conda info -s | grep -Po "sys.prefix:\s*\K[/\w]*"`
-export OPENCV_CONTRIB=$HOME/Codes/star/opencv_contrib
+export OPENCV_CONTRIB=$HOME/Codes/Star/opencv_contrib
 
-cd $HOME/Codes/star/opencv/
+cd $HOME/Codes/Star/opencv/
 mkdir _build; cd _build
 
 cmake -DCMAKE_BUILD_TYPE=Release \
--DCMAKE_INSTALL_PREFIX=$HOME/opencv-4.5.2 \
+-DCMAKE_INSTALL_PREFIX=$HOME/opencv-4.5.4 \
 -DOPENCV_EXTRA_MODULES_PATH=$OPENCV_CONTRIB/modules \
 \
--DPYTHON_EXECUTABLE=$CONDA_HOME/bin/python3.8 \
--DPYTHON3_EXECUTABLE=$CONDA_HOME/bin/python3.8 \
--DPYTHON3_LIBRARY=$CONDA_HOME/lib/libpython3.8.so \
--DPYTHON3_INCLUDE_DIR=$CONDA_HOME/include/python3.8 \
--DPYTHON3_NUMPY_INCLUDE_DIRS=$CONDA_HOME/lib/python3.8/site-packages/numpy/core/include \
+-DPYTHON_EXECUTABLE=$CONDA_HOME/bin/python3.9 \
+-DPYTHON3_EXECUTABLE=$CONDA_HOME/bin/python3.9 \
+-DPYTHON3_LIBRARY=$CONDA_HOME/lib/libpython3.9.so \
+-DPYTHON3_INCLUDE_DIR=$CONDA_HOME/include/python3.9 \
+-DPYTHON3_NUMPY_INCLUDE_DIRS=$CONDA_HOME/lib/python3.9/site-packages/numpy/core/include \
 -DBUILD_opencv_python2=OFF \
 -DBUILD_opencv_python3=ON \
 \
@@ -70,7 +70,9 @@ make -j$(nproc)
 make install
 
 cd $HOME
-ln -sf opencv-4.5.2 opencv-4
+ln -sf opencv-4.5.4 opencv-4
+
+conda activate
 ```
 
 <!--
@@ -81,7 +83,7 @@ ln -sf opencv-4.5.2 opencv-4
 ## Start OpenCV
 
 ```bash
-export PYTHONPATH=$HOME/opencv-4/lib/python3.8/site-packages:$PYTHONPATH
+export PYTHONPATH=$HOME/opencv-4/lib/python3.9/site-packages:$PYTHONPATH
 python - <<EOF
 import cv2
 print(cv2.__version__)
@@ -93,11 +95,13 @@ EOF
 ```bash
 Traceback (most recent call last):
   File "<stdin>", line 1, in <module>
-  File "/home/john/opencv-4/lib/python3.8/site-packages/cv2/__init__.py", line 102, in <module>
+  File "/home/john/opencv-4/lib/python3.9/site-packages/cv2/__init__.py", line 180, in <module>
     bootstrap()
-  File "/home/john/opencv-4/lib/python3.8/site-packages/cv2/__init__.py", line 90, in bootstrap
-    import cv2
-ImportError: /home/john/anaconda3/bin/../lib/libgio-2.0.so.0: undefined symbol: g_unix_get_passwd_entry
+  File "/home/john/opencv-4/lib/python3.9/site-packages/cv2/__init__.py", line 152, in bootstrap
+    native_module = importlib.import_module("cv2")
+  File "/home/john/anaconda3/lib/python3.9/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+ImportError: /home/john/anaconda3/bin/../lib/libgio-2.0.so.0: undefined symbol: g_uri_join
 ```
 
 Solution:
