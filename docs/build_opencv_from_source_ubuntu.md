@@ -32,13 +32,18 @@ EOF
 ## Get OpenCV
 
 ```bash
-git clone -b 4.5.4 --depth 1 https://github.com/opencv/opencv.git
-git clone -b 4.5.4 --depth 1 https://github.com/opencv/opencv_contrib.git
+git clone -b 4.5.5 --depth 1 https://github.com/opencv/opencv.git
+git clone -b 4.5.5 --depth 1 https://github.com/opencv/opencv_contrib.git
 ```
 
 ## Build OpenCV
 
 ```bash
+# GUI, GTK+:
+#  sudo apt install -y libgtk-3-dev
+# Video I/O, FFMPEG:
+#  sudo apt install -y ffmpeg libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libavresample-dev
+
 conda deactivate
 
 export CONDA_HOME=`conda info -s | grep -Po "sys.prefix:\s*\K[/\w]*"`
@@ -48,7 +53,7 @@ cd $HOME/Codes/Star/opencv/
 mkdir _build; cd _build
 
 cmake -DCMAKE_BUILD_TYPE=Release \
--DCMAKE_INSTALL_PREFIX=$HOME/opencv-4.5.4 \
+-DCMAKE_INSTALL_PREFIX=$HOME/opencv-4.5.5 \
 -DOPENCV_EXTRA_MODULES_PATH=$OPENCV_CONTRIB/modules \
 \
 -DPYTHON_EXECUTABLE=$CONDA_HOME/bin/python3.9 \
@@ -70,13 +75,15 @@ make -j$(nproc)
 make install
 
 cd $HOME
-ln -sf opencv-4.5.4 opencv-4
+ln -sf opencv-4.5.5 opencv-4
 
 conda activate
 ```
 
 <!--
--DCUDA_ARCH_BIN="8.0" \
+/usr/local/cuda/extras/demo_suite/deviceQuery
+
+-DCUDA_ARCH_BIN="7.5" \
 -DCUDA_ARCH_PTX="" \
 -->
 
